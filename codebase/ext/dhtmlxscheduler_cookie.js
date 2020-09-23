@@ -1,10 +1,14 @@
 /*
+
 @license
-dhtmlxScheduler v.5.0.0 Professional Evaluation
+dhtmlxScheduler v.5.3.9 Standard
 
-This software is covered by DHTMLX Evaluation License. Contact sales@dhtmlx.com to get Commercial or Enterprise license. Usage without proper license is prohibited.
+To use dhtmlxScheduler in non-GPL projects (and get Pro version of the product), please obtain Commercial/Enterprise or Ultimate license on our site https://dhtmlx.com/docs/products/dhtmlxScheduler/#licensing or contact us at sales@dhtmlx.com
 
-(c) Dinamenta, UAB.
+(c) XB Software Ltd.
+
 */
-Scheduler.plugin(function(e){!function(){function t(e,t,i){var a=e+"="+i+(t?"; "+t:"");document.cookie=a}function i(e){var t=e+"=";if(document.cookie.length>0){var i=document.cookie.indexOf(t);if(-1!=i){i+=t.length;var a=document.cookie.indexOf(";",i);return-1==a&&(a=document.cookie.length),document.cookie.substring(i,a)}}return""}var a=!0;e.attachEvent("onBeforeViewChange",function(n,r,s,d){if(a&&e._get_url_nav){var o=e._get_url_nav();(o.date||o.mode||o.event)&&(a=!1)}var l=(e._obj.id||"scheduler")+"_settings";
-if(a){a=!1;var h=i(l);if(h){e._min_date||(e._min_date=d),h=unescape(h).split("@"),h[0]=this.templates.xml_date(h[0]);var _=this.isViewExists(h[1])?h[1]:s,c=isNaN(+h[0])?d:h[0];return window.setTimeout(function(){e.setCurrentView(c,_)},1),!1}}var u=escape(this.templates.xml_format(d||r)+"@"+(s||n));return t(l,"expires=Sun, 31 Jan 9999 22:00:00 GMT",u),!0});var n=e._load;e._load=function(){var t=arguments;if(e._date)n.apply(this,t);else{var i=this;window.setTimeout(function(){n.apply(i,t)},1)}}}()});
+Scheduler.plugin(function(e){!function(){function t(e,t,i){var a=e+"="+i+(t?"; "+t:"");document.cookie=a}function i(e){var t=e+"=";if(document.cookie.length>0){var i=document.cookie.indexOf(t);if(-1!=i){i+=t.length;var a=document.cookie.indexOf(";",i);return-1==a&&(a=document.cookie.length),document.cookie.substring(i,a)}}return""}var a=!0;e.attachEvent("onBeforeViewChange",function(n,r,o,s){if(a&&e._get_url_nav){var d=e._get_url_nav();(d.date||d.mode||d.event)&&(a=!1)}
+var _=(e._obj.id||"scheduler")+"_settings";if(a){a=!1;var l=i(_);if(l){e._min_date||(e._min_date=s),l=unescape(l).split("@"),l[0]=this._helpers.parseDate(l[0]);var h=this.isViewExists(l[1])?l[1]:o,c=isNaN(+l[0])?s:l[0];return window.setTimeout(function(){e.setCurrentView(c,h)},1),!1}}return t(_,"expires=Sun, 31 Jan 9999 22:00:00 GMT",escape(this._helpers.formatDate(s||r)+"@"+(o||n))),!0});var n=e._load;e._load=function(){var t=arguments;if(e._date)n.apply(this,t);else{var i=this
+;window.setTimeout(function(){n.apply(i,t)},1)}}}()});
+//# sourceMappingURL=../sources/ext/dhtmlxscheduler_cookie.js.map
