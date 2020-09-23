@@ -1,40 +1,53 @@
 /*
+
 @license
-dhtmlxScheduler v.4.4.9 Professional
+dhtmlxScheduler v.5.3.9 Standard
 
-This software is covered by DHTMLX Commercial License. Usage without proper license is prohibited.
+To use dhtmlxScheduler in non-GPL projects (and get Pro version of the product), please obtain Commercial/Enterprise or Ultimate license on our site https://dhtmlx.com/docs/products/dhtmlxScheduler/#licensing or contact us at sales@dhtmlx.com
 
-(c) Dinamenta, UAB.
+(c) XB Software Ltd.
+
 */
+Scheduler.plugin(function(scheduler){
+	
 scheduler.attachEvent("onTemplatesReady", function() {
-	var original_sns = scheduler.config.lightbox.sections.slice();
+	var originalRecurringSetValue;
+	if (scheduler.form_blocks.recurring) {
+		originalRecurringSetValue = scheduler.form_blocks.recurring.set_value;
+	}
 	var original_left_buttons = scheduler.config.buttons_left.slice();
 	var original_right_buttons = scheduler.config.buttons_right.slice();
-
 
 	scheduler.attachEvent("onBeforeLightbox", function(id) {
 		if (this.config.readonly_form || this.getEvent(id).readonly) {
 			this.config.readonly_active = true;
-
-			for (var i = 0; i < this.config.lightbox.sections.length; i++) {
-				this.config.lightbox.sections[i].focus = false;
-			}
 		}
 		else {
 			this.config.readonly_active = false;
-			scheduler.config.lightbox.sections = original_sns.slice(); // restore original list of sections including recurring
 			scheduler.config.buttons_left = original_left_buttons.slice();
 			scheduler.config.buttons_right = original_right_buttons.slice();
+	
+			// initial value
+			if(scheduler.form_blocks.recurring) {
+				scheduler.form_blocks.recurring.set_value = originalRecurringSetValue;
+			}
 		}
 
 		var sns = this.config.lightbox.sections;
 		if (this.config.readonly_active) {
 			for (var i = 0; i < sns.length; i++) {
 				if (sns[i].type == 'recurring') {
-					if (this.config.readonly_active) {
-						sns.splice(i, 1);
+					if (this.config.readonly_active && scheduler.form_blocks.recurring) {
+						scheduler.form_blocks.recurring.set_value = function(node, value, ev) {
+							var wrapper = scheduler.$domHelpers.closest(node, ".dhx_wrap_section");
+							var style = "none";
+							wrapper.querySelector('.dhx_cal_lsection').display = style;
+							wrapper.querySelector('.dhx_form_repeat').display = style;
+							wrapper.style.display = style;
+
+							scheduler.setLightboxSize();
+						};
 					}
-					break;
 				}
 			}
 
@@ -56,8 +69,6 @@ scheduler.attachEvent("onTemplatesReady", function() {
 					}
 				}
 			}
-
-
 		}
 
 		this.resetLightbox();
@@ -76,7 +87,7 @@ scheduler.attachEvent("onTemplatesReady", function() {
 				if(d.checked)
 					n.checked = true;
 			}else {
-				var t = document.createElement("SPAN");
+				var t = document.createElement("span");
 				t.className = "dhx_text_disabled";
 				t.innerHTML = text(txts[i]);
 				n.parentNode.insertBefore(t, n);
@@ -107,7 +118,7 @@ scheduler.attachEvent("onTemplatesReady", function() {
 			var d = this.getLightbox();
 			var n = this._lightbox_r = d.cloneNode(true);
 			n.id = scheduler.uid();
-
+			n.className += " dhx_cal_light_readonly";
 			txt_replace("textarea", d, n, function(a) {
 				return a.value;
 			});
@@ -129,15 +140,13 @@ scheduler.attachEvent("onTemplatesReady", function() {
 			this.setLightboxSize();
 			n.onclick = function(e) {
 				var src = e ? e.target : event.srcElement;
-				if (!scheduler._getClassName(src)) src = src.previousSibling;
-				if (src && src.className)
-					switch (scheduler._getClassName(src)) {
-						case "dhx_cancel_btn":
-							scheduler.callEvent("onEventCancel", [scheduler._lightbox_id]);
-							scheduler._edit_stop_event(scheduler.getEvent(scheduler._lightbox_id), false);
-							scheduler.hide_lightbox();
-							break;
+				var buttonElement = scheduler.$domHelpers.closest(src, ".dhx_btn_set");
+
+				if (buttonElement){
+					if(buttonElement.querySelector(".dhx_cancel_btn")){
+						scheduler.cancel_lightbox();
 					}
+				}
 			};
 
 			n.onkeydown=function(e){
@@ -185,4 +194,7 @@ scheduler.attachEvent("onTemplatesReady", function() {
 
 		return hold.apply(this, arguments);
 	};
+});
+
+
 });

@@ -1,12 +1,19 @@
 /*
+
 @license
-dhtmlxScheduler v.4.4.9 Professional
+dhtmlxScheduler v.5.3.9 Standard
 
-This software is covered by DHTMLX Commercial License. Usage without proper license is prohibited.
+To use dhtmlxScheduler in non-GPL projects (and get Pro version of the product), please obtain Commercial/Enterprise or Ultimate license on our site https://dhtmlx.com/docs/products/dhtmlxScheduler/#licensing or contact us at sales@dhtmlx.com
 
-(c) Dinamenta, UAB.
+(c) XB Software Ltd.
+
 */
-window.dhtmlXTooltip = scheduler.dhtmlXTooltip = window.dhtmlxTooltip = {};
+Scheduler.plugin(function(scheduler){
+
+(function(){
+
+
+window.dhtmlXTooltip = scheduler.dhtmlXTooltip = scheduler.tooltip = {};
 
 dhtmlXTooltip.config = {
 	className: 'dhtmlXTooltip tooltip',
@@ -21,8 +28,8 @@ dhtmlXTooltip.tooltip.className = dhtmlXTooltip.config.className;
 scheduler._waiAria.tooltipAttr(dhtmlXTooltip.tooltip);
 
 dhtmlXTooltip.show = function(event, text) { //browser event, text to display
-	if (scheduler.config.touch && !scheduler.config.touch_tooltip) return;
-	
+	if (this._mobile && !scheduler.config.touch_tooltip) return;
+
 	var dhxTooltip = dhtmlXTooltip;
 	var tooltip_div = this.tooltip;
 	var tooltip_div_style = tooltip_div.style;
@@ -50,6 +57,10 @@ dhtmlXTooltip.show = function(event, text) { //browser event, text to display
 
 	tooltip_div_style.left = "0";
 	tooltip_div_style.top = "0";
+
+	if (scheduler.config.rtl) {
+		tooltip_div.className += " dhtmlXTooltip_rtl";
+	}
 
 	this.tooltip.innerHTML = text;
 	document.body.appendChild(this.tooltip);
@@ -163,7 +174,7 @@ scheduler.attachEvent("onMouseMove", function(event_id, e) { // (scheduler event
 	var is_tooltip_target = (dhxTooltip.isTooltipTarget && dhxTooltip.isTooltipTarget(target));
 
 	// if we are over event or tooltip or custom target for tooltip
-	if (event_id || is_tooltip || is_tooltip_target) {
+	if ((event_id && scheduler.getState().editor_id != event_id) || is_tooltip || is_tooltip_target) {
 		var text;
 
 		if (event_id || dhxTooltip.tooltip.event_id) {
@@ -181,7 +192,7 @@ scheduler.attachEvent("onMouseMove", function(event_id, e) { // (scheduler event
 		}
 
 		var evt;
-		if (_isIE) {
+		if (scheduler.$env.isIE) {
 			//make a copy of event, will be used in timed call
 
 			evt = {'pageX':undefined,
@@ -211,4 +222,8 @@ scheduler.attachEvent("onBeforeDrag", function() {
 scheduler.attachEvent("onEventDeleted", function() {
 	dhtmlXTooltip.hide();
 	return true;
+});
+})();
+
+
 });

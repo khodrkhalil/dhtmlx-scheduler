@@ -1,18 +1,30 @@
 /*
+
 @license
-dhtmlxScheduler v.4.4.9 Professional
+dhtmlxScheduler v.5.3.9 Standard
 
-This software is covered by DHTMLX Commercial License. Usage without proper license is prohibited.
+To use dhtmlxScheduler in non-GPL projects (and get Pro version of the product), please obtain Commercial/Enterprise or Ultimate license on our site https://dhtmlx.com/docs/products/dhtmlxScheduler/#licensing or contact us at sales@dhtmlx.com
 
-(c) Dinamenta, UAB.
+(c) XB Software Ltd.
+
 */
+Scheduler.plugin(function(scheduler){
+
 (function(){
 
 	scheduler.config.all_timed = "short";
 	scheduler.config.all_timed_month = false;
 
 	var is_event_short = function (ev) {
-		return 	!((ev.end_date - ev.start_date)/(1000*60*60) >= 24);
+		if(!((ev.end_date - ev.start_date)/(1000*60*60) >= 24)){
+			return true;
+		}
+
+		// short event shouldn't disapear to multiday area during dnd-resize
+		if(scheduler._drag_mode == "resize" && scheduler._drag_id == ev.id){
+			return true;
+		}
+		return 	false;
 	};
 
 	// copy of usual events and recurring instances;
@@ -67,7 +79,13 @@ This software is covered by DHTMLX Commercial License. Usage without proper lice
 			}
 
 			var ce = this._safe_copy(ev); // current event (event for one specific day) is copy of original with modified dates
-
+			if(!ev._virtual){
+				ce._first_chunk = true;
+			}else{
+				ce._first_chunk = false;
+			}
+			ce._drag_resize = false;
+			ce._virtual = true;
 			ce.start_date = new Date(ce.start_date); // as lame copy doesn't copy date objects
 
 			if (!isOvernightEvent(ev)) {
@@ -90,6 +108,7 @@ This software is covered by DHTMLX Commercial License. Usage without proper lice
 		//	}
 
 			var re = this._safe_copy(ev); // remaining event, copy of original with modified start_date (making range more narrow)
+			re._virtual = true;
 			re.end_date = new Date(re.end_date);
 			if (re.start_date < this._min_date)
 				re.start_date = setDateTime(this._min_date, this.config.first_hour);// as we are starting only with whole hours
@@ -97,12 +116,16 @@ This software is covered by DHTMLX Commercial License. Usage without proper lice
 				re.start_date = setDateTime(getNextDay(ev.start_date), this.config.first_hour);
 
 			if (re.start_date < this._max_date && re.start_date < re.end_date) {
-				if (event_changed)
+				if (event_changed){
 					evs.splice(i+1,0,re);//insert part
-				else {
+				}else {
 					evs[i--] = re;
 					continue;
 				}
+				re._last_chunk = false;
+			}else{
+				ce._last_chunk = true;
+				ce._drag_resize = true;
 			}
 
 		}
@@ -130,7 +153,7 @@ This software is covered by DHTMLX Commercial License. Usage without proper lice
 	var old_get_visible_events = scheduler.get_visible_events;
 	scheduler.get_visible_events = function(only_timed){
 		if (!(this.config.all_timed && this.config.multi_day))
-			return old_get_visible_events.call(this, only_timed);	
+			return old_get_visible_events.call(this, only_timed);
 		return old_get_visible_events.call(this, false); // only timed = false
 	};
 	scheduler.attachEvent("onBeforeViewChange", function (old_mode, old_date, mode, date) {
@@ -166,3 +189,5 @@ This software is covered by DHTMLX Commercial License. Usage without proper lice
 		}
 	};
 })();
+
+});

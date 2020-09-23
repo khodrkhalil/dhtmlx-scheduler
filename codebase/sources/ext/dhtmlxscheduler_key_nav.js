@@ -1,16 +1,18 @@
 /*
+
 @license
-dhtmlxScheduler v.4.4.9 Professional
+dhtmlxScheduler v.5.3.9 Standard
 
-This software is covered by DHTMLX Commercial License. Usage without proper license is prohibited.
+To use dhtmlxScheduler in non-GPL projects (and get Pro version of the product), please obtain Commercial/Enterprise or Ultimate license on our site https://dhtmlx.com/docs/products/dhtmlxScheduler/#licensing or contact us at sales@dhtmlx.com
 
-(c) Dinamenta, UAB.
+(c) XB Software Ltd.
+
 */
 (function(){
-	function setupKeyNav(scheduler){
+
+function setupKeyNav(scheduler){
 		scheduler.config.key_nav = true;
 		scheduler.config.key_nav_step = 30;
-
 		scheduler.addShortcut = function(shortcut, handler, scope){
 			var scopeObject = getScope(scope);
 			if(scopeObject){
@@ -129,6 +131,12 @@ scheduler.$keyboardNavigation.shortcuts = {
 		command.modifiers.ctrl = !!domEvent.ctrlKey;
 		command.modifiers.meta = !!domEvent.metaKey;
 		command.keyCode = domEvent.which || domEvent.keyCode;
+
+		if(command.keyCode >= 96 && command.keyCode <= 105){
+			// numpad keys 96-105 -> 48-57
+			command.keyCode -= 48;//convert numpad  number code to regular number code
+		}
+
 		var printableKey = String.fromCharCode(command.keyCode );
 		if(printableKey){
 			command.keyCode = printableKey.toLowerCase().charCodeAt(0);
@@ -308,7 +316,7 @@ scheduler.$keyboardNavigation.marker = {
 		}
 	},
 	createElement: function(){
-		var element = document.createElement("DIV");
+		var element = document.createElement("div");
 		element.setAttribute("tabindex", -1);
 		element.className = "dhx_focus_slot";
 		return element;
@@ -525,7 +533,7 @@ scheduler.$keyboardNavigation.marker = {
 		var width = Math.max(1, end_pos - start_pos - 1);
 		block.style.cssText = "height: "+height+"px; left: "+start_pos+"px; width: "+width+"px; top: "+top+"px;";
 
-		area.insertBefore(block, area.firstChild);
+		area.appendChild(block);
 		blocks.push(block);
 
 		return blocks;
@@ -747,7 +755,13 @@ scheduler.$keyboardNavigation.SchedulerNode.prototype = scheduler._compose(
 				i--;
 			}
 
-			return evs[0];
+			for(var i = 0; i < evs.length; i++){
+				var eventElement = new scheduler.$keyboardNavigation.Event(evs[i].id);
+				if(eventElement.getNode())
+					return evs[i];
+			}
+
+			return null;
 		},
 
 		nextEventHandler: function(id){
@@ -1026,7 +1040,6 @@ scheduler.$keyboardNavigation.Event = function(id){
 		this.end = new Date(ev.end_date);
 
 		this.section = this._getSection(ev);
-
 		this.eventId = id;
 	}
 };
@@ -1059,15 +1072,39 @@ scheduler.$keyboardNavigation.Event.prototype = scheduler._compose(
 			return defaultElement;
 		},
 
-		getNode: function(){
-			var idSelector = "[event_id='"+this.eventId+"']";
 
+
+		getNode: function(){
+
+			function isScrolledIntoView(el) {
+				var eventBox = el.getBoundingClientRect();
+				var viewPort = scheduler.$container.querySelector(".dhx_cal_data").getBoundingClientRect();
+				
+				if(eventBox.bottom < viewPort.top || eventBox.top > viewPort.bottom){
+					return false;
+				}
+				return true;
+			}
+
+			var idSelector = "[event_id='"+this.eventId+"']";
 
 			var inlineEditor = scheduler.$keyboardNavigation.dispatcher.getInlineEditor(this.eventId);
 			if(inlineEditor){// is inline editor visible
 				return inlineEditor;
 			}else{
-				return scheduler.$container.querySelector(idSelector);
+				if(scheduler.isMultisectionEvent && scheduler.isMultisectionEvent(scheduler.getEvent(this.eventId))){
+					var nodes = scheduler.$container.querySelectorAll(idSelector);
+					for(var i = 0; i < nodes.length; i++){
+						if(isScrolledIntoView(nodes[i])){
+							return nodes[i];
+						}
+					}
+					return nodes[0];
+				}else{
+					return scheduler.$container.querySelector(idSelector);
+				}
+
+				
 			}
 
 		},
@@ -2318,6 +2355,26 @@ scheduler.$keyboardNavigation.dispatcher = {
 	activeNode: null,
 	globalNode: new scheduler.$keyboardNavigation.SchedulerNode(),
 
+	keepScrollPosition: function (callback) {
+		var top, left;
+
+		var scrollable = scheduler.$container.querySelector(".dhx_timeline_scrollable_data");
+		if(!scrollable){
+			scrollable = scheduler.$container.querySelector(".dhx_cal_data");
+		}
+
+		if(scrollable){
+			top = scrollable.scrollTop;
+			left = scrollable.scrollLeft;
+		}
+
+		callback();
+
+		if(scrollable){
+			scrollable.scrollTop = top;
+			scrollable.scrollLeft = left;
+		}
+	},
 	enable: function(){
 		if(!scheduler.$container){
 			// do nothing if not initialized
@@ -2325,8 +2382,11 @@ scheduler.$keyboardNavigation.dispatcher = {
 		}
 
 		this.isActive = true;
-		this.globalNode.enable();
-		this.setActiveNode(this.getActiveNode());
+		var self = this;
+		this.keepScrollPosition(function () {
+			self.globalNode.enable();
+			self.setActiveNode(self.getActiveNode());
+		});
 	},
 
 	disable: function(){
@@ -2417,7 +2477,7 @@ scheduler.$keyboardNavigation.dispatcher = {
 			return;
 
 		e = e || window.event;
-		
+
 		var schedulerNode = this.globalNode;
 
 		var command = scheduler.$keyboardNavigation.shortcuts.getCommandFromEvent(e);
@@ -2452,11 +2512,11 @@ scheduler._temp_key_scope = function (){
 	var pos = {};
 
 	if(!document.body){
-		dhtmlxEvent(window, "load", function(){
-			dhtmlxEvent(document.body, "mousemove", trackMousePosition);
+		scheduler.event(window, "load", function(){
+			scheduler.event(document.body, "mousemove", trackMousePosition);
 		});
 	}else{
-		dhtmlxEvent(document.body, "mousemove", trackMousePosition);
+		scheduler.event(document.body, "mousemove", trackMousePosition);
 	}
 
 	function trackMousePosition(event){
@@ -2606,7 +2666,6 @@ scheduler._temp_key_scope();
 
 
 		(function(){
-
 scheduler.$keyboardNavigation.attachSchedulerHandlers = function(){
 	var dispatcher = scheduler.$keyboardNavigation.dispatcher;
 
@@ -2616,8 +2675,10 @@ scheduler.$keyboardNavigation.attachSchedulerHandlers = function(){
 		return dispatcher.keyDownHandler(e);
 	};
 
-	var focusHandler = function(){
-		dispatcher.focusGlobalNode();
+	var focusHandler = function () {
+		dispatcher.keepScrollPosition(function () {
+			dispatcher.focusGlobalNode();
+		});
 	};
 
 	var waitCall;
@@ -2629,20 +2690,29 @@ scheduler.$keyboardNavigation.attachSchedulerHandlers = function(){
 		waitCall = setTimeout(function(){
 			if(!dispatcher.isEnabled())
 				dispatcher.enable();
-
-			var activeNode = dispatcher.getActiveNode();
-			if(activeNode instanceof scheduler.$keyboardNavigation.MinicalButton || activeNode instanceof scheduler.$keyboardNavigation.MinicalCell)
-				return;
-
-			if(!activeNode.isValid()){
-				dispatcher.setActiveNode(activeNode.fallback());
-			}else{
-				dispatcher.focusNode(activeNode);
-			}
-
-			dispatcher.focusNode(dispatcher.getActiveNode());
+			reFocusActiveNode();
 		});
 	});
+
+	var reFocusActiveNode = function(){
+		if(!dispatcher.isEnabled())
+			return;
+
+		var activeNode = dispatcher.getActiveNode();
+		if(!activeNode)
+			return;
+
+		if(!activeNode.isValid()){
+			activeNode = activeNode.fallback();
+		}
+
+		if(!activeNode || activeNode instanceof scheduler.$keyboardNavigation.MinicalButton || activeNode instanceof scheduler.$keyboardNavigation.MinicalCell)
+			return;
+
+		dispatcher.keepScrollPosition(function () {
+			activeNode.focus(true);
+		});
+	};
 
 	scheduler.attachEvent("onSchedulerReady", function(){
 		var container = scheduler.$container;
@@ -2982,10 +3052,11 @@ scheduler.$keyboardNavigation.patchMinicalendar = function(){
 
 	}
 
+if(window.Scheduler){
+	window.Scheduler.plugin(setupKeyNav);
+}else{
+	setupKeyNav(window.scheduler);
+}
 
-	if(window.Scheduler){
-		window.Scheduler.plugin(setupKeyNav);
-	}else{
-		setupKeyNav(window.scheduler);
-	}
+
 })();

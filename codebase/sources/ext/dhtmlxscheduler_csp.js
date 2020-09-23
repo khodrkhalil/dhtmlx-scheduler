@@ -1,10 +1,12 @@
 /*
+
 @license
-dhtmlxScheduler v.4.4.9 Professional
+dhtmlxScheduler v.5.3.9 Standard
 
-This software is covered by DHTMLX Commercial License. Usage without proper license is prohibited.
+To use dhtmlxScheduler in non-GPL projects (and get Pro version of the product), please obtain Commercial/Enterprise or Ultimate license on our site https://dhtmlx.com/docs/products/dhtmlxScheduler/#licensing or contact us at sales@dhtmlx.com
 
-(c) Dinamenta, UAB.
+(c) XB Software Ltd.
+
 */
 /*
  Compatibility with Content Security Policy
@@ -14,6 +16,7 @@ This software is covered by DHTMLX Commercial License. Usage without proper lice
  style-src 'unsafe-inline'
 
 */
+Scheduler.plugin(function (scheduler) {
 
 scheduler.date.date_to_str = function(format,utc){
 	return function(date) {
@@ -99,3 +102,5 @@ scheduler.date.str_to_date = function(format,utc){
 		return new Date(set[0], set[1], set[2], set[3], set[4], set[5]);
 	};
 };
+
+});

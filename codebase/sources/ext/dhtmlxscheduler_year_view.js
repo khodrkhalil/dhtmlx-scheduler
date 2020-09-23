@@ -1,11 +1,15 @@
 /*
+
 @license
-dhtmlxScheduler v.4.4.9 Professional
+dhtmlxScheduler v.5.3.9 Standard
 
-This software is covered by DHTMLX Commercial License. Usage without proper license is prohibited.
+To use dhtmlxScheduler in non-GPL projects (and get Pro version of the product), please obtain Commercial/Enterprise or Ultimate license on our site https://dhtmlx.com/docs/products/dhtmlxScheduler/#licensing or contact us at sales@dhtmlx.com
 
-(c) Dinamenta, UAB.
+(c) XB Software Ltd.
+
 */
+Scheduler.plugin(function(scheduler){
+
 scheduler.config.year_x = 4;
 scheduler.config.year_y = 3;
 scheduler.xy.year_top = 0;
@@ -36,7 +40,7 @@ scheduler.templates.year_tooltip = function(s, e, ev) {
 			}
 
 			if(monthNode){
-				var start = this.templates.xml_date(monthNode.getAttribute("date"));
+				var start = this._helpers.parseDate(monthNode.getAttribute("date"));
 				start.setDate(parseInt(t.innerHTML, 10));
 				var end = this.date.add(start, 1, "day");
 				if (!this.config.readonly && this.config.dblclick_create)
@@ -71,7 +75,7 @@ scheduler.templates.year_tooltip = function(s, e, ev) {
 			if (dates.hasOwnProperty(date)) {
 				div = dates[date];
 				div.className = "dhx_month_head";
-				div.setAttribute("date", "");
+				div.removeAttribute("date");
 			}
 		}
 		scheduler._year_marked_cells = {};
@@ -89,8 +93,9 @@ scheduler.templates.year_tooltip = function(s, e, ev) {
 			if (this._tooltip.date.valueOf() == date.valueOf()) return;
 			this._tooltip.innerHTML = "";
 		} else {
-			var t = this._tooltip = document.createElement("DIV");
+			var t = this._tooltip = document.createElement("div");
 			t.className = "dhx_year_tooltip";
+			if (this.config.rtl) t.className += " dhx_tooltip_rtl";
 			document.body.appendChild(t);
 			t.onclick = scheduler._click.dhx_cal_data;
 		}
@@ -137,57 +142,61 @@ scheduler.templates.year_tooltip = function(s, e, ev) {
 		if (src.tagName.toLowerCase() == 'a') // fix for active links extension (it adds links to the date in the cell)
 			src = src.parentNode;
 		if (scheduler._getClassName(src).indexOf("dhx_year_event") != -1)
-			scheduler._showToolTip(from_attr(src.getAttribute("date")), getOffset(src), e, src);
+			scheduler._showToolTip(from_attr(src.getAttribute("date")), scheduler.$domHelpers.getOffset(src), e, src);
 		else
 			scheduler._hideToolTip();
 	};
 	scheduler._init_year_tooltip = function() {
 		scheduler._detachDomEvent(scheduler._els["dhx_cal_data"][0], "mouseover", scheduler._year_view_tooltip_handler);
-		dhtmlxEvent(scheduler._els["dhx_cal_data"][0], "mouseover", scheduler._year_view_tooltip_handler);
+		scheduler.event(scheduler._els["dhx_cal_data"][0], "mouseover", scheduler._year_view_tooltip_handler);
 	};
 
-	scheduler.attachEvent("onSchedulerResize", function() {
-		if (is_year_mode()) {
-			this.year_view(true);
-			return false;
-		}
-		return true;
-	});
 	scheduler._get_year_cell = function(d) {
 		//there can be more than 1 year in view
 		//year can start not from January
 		var m = d.getMonth() + 12 * (d.getFullYear() - this._min_date.getFullYear()) - this.week_starts._month;
-		var t = this._els["dhx_cal_data"][0].childNodes[m];
-		var d = this.week_starts[m] + d.getDate() - 1;
+		var yearBox = this._els["dhx_cal_data"][0].childNodes[m];
+		var dayIndex = this.week_starts[m] + d.getDate() - 1;
 
-		return t.querySelector(".dhx_year_body").firstChild.rows[Math.floor(d / 7)].cells[d % 7].firstChild;
+		var row = yearBox.querySelectorAll(".dhx_year_body tr")[Math.floor(dayIndex / 7)];
+		var cell = row.querySelectorAll("td")[dayIndex % 7];
+		return cell.querySelector(".dhx_month_head");
 	};
 
 	scheduler._year_marked_cells = {};
-	scheduler._mark_year_date = function(d, ev) {
-		var date = to_attr(d);
-		var c = this._get_year_cell(d);
-		var ev_class = this.templates.event_class(ev.start_date, ev.end_date, ev);
-		if (!scheduler._year_marked_cells[date]) {
-			c.className = "dhx_month_head dhx_year_event";
-			c.setAttribute("date", date);
-			scheduler._year_marked_cells[date] = c;
+	scheduler._mark_year_date = function(date, event) {
+		var dateString = to_attr(date);
+		var cell = this._get_year_cell(date);
+		if (!cell) {
+			return;
 		}
-		c.className += (ev_class) ? (" "+ev_class) : "";
+		var ev_class = this.templates.event_class(event.start_date, event.end_date, event);
+		if (!scheduler._year_marked_cells[dateString]) {
+			cell.className = "dhx_month_head dhx_year_event";
+			cell.setAttribute("date", dateString);
+			scheduler._year_marked_cells[dateString] = cell;
+		}
+		cell.className += (ev_class) ? (" "+ev_class) : "";
 	};
-	scheduler._unmark_year_date = function(d) {
-		this._get_year_cell(d).className = "dhx_month_head";
+	scheduler._unmark_year_date = function(date) {
+		var cell = this._get_year_cell(date);
+		if (!cell) {
+			return;
+		}
+		cell.className = "dhx_month_head";
 	};
-	scheduler._year_render_event = function(ev) {
-		var d = ev.start_date;
-		if (d.valueOf() < this._min_date.valueOf())
-			d = this._min_date;
-		else d = this.date.date_part(new Date(d));
+	scheduler._year_render_event = function(event) {
+		var date = event.start_date;
+		if (date.valueOf() < this._min_date.valueOf()){
+			date = this._min_date;
+		} else {
+			date = this.date.date_part(new Date(date));
+		}
 
-		while (d < ev.end_date) {
-			this._mark_year_date(d, ev);
-			d = this.date.add(d, 1, "day");
-			if (d.valueOf() >= this._max_date.valueOf())
+		while (date < event.end_date) {
+			this._mark_year_date(date, event);
+			date = this.date.add(date, 1, "day");
+			if (date.valueOf() >= this._max_date.valueOf())
 				return;
 		}
 	};
@@ -266,11 +275,12 @@ scheduler.templates.year_tooltip = function(s, e, ev) {
 		var sd = this.date[this._mode + "_start"](this.date.copy(this._date));
 		var ssd = sd;
 		var d = null;
-		for (var i = 0; i < c.year_y; i++)
+		for (var i = 0; i < c.year_y; i++){
 			for (var j = 0; j < c.year_x; j++) {
-				d = document.createElement("DIV");
+				d = document.createElement("div");
+				d.className = "dhx_year_box";
 				d.style.cssText = "position:absolute;";
-				d.setAttribute("date", this.templates.xml_format(sd));
+				d.setAttribute("date", this._helpers.formatDate(sd));
 				d.innerHTML = "<div class='dhx_year_month'></div><div class='dhx_year_grid'><div class='dhx_year_week'>" + week_template.innerHTML + "</div><div class='dhx_year_body'></div></div>";
 
 				var header = d.querySelector(".dhx_year_month");
@@ -308,7 +318,13 @@ scheduler.templates.year_tooltip = function(s, e, ev) {
 				sd = this.date.add(sd, 1, "month");
 
 			}
-		this._els["dhx_cal_date"][0].innerHTML = this.templates[this._mode + "_date"](ssd, sd, this._mode);
+		}
+
+		var dateElement = this._getNavDateElement();
+		if(dateElement){
+			dateElement.innerHTML = this.templates[this._mode + "_date"](ssd, sd, this._mode);
+		}
+
 		this.week_starts = week_starts;
 		week_starts._month = ssd.getMonth();
 		this._min_date = ssd;
@@ -421,3 +437,6 @@ scheduler.templates.year_tooltip = function(s, e, ev) {
 
 
 })();
+
+
+});

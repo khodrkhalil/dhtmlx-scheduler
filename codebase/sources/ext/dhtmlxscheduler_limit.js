@@ -1,11 +1,15 @@
 /*
+
 @license
-dhtmlxScheduler v.4.4.9 Professional
+dhtmlxScheduler v.5.3.9 Standard
 
-This software is covered by DHTMLX Commercial License. Usage without proper license is prohibited.
+To use dhtmlxScheduler in non-GPL projects (and get Pro version of the product), please obtain Commercial/Enterprise or Ultimate license on our site https://dhtmlx.com/docs/products/dhtmlxScheduler/#licensing or contact us at sales@dhtmlx.com
 
-(c) Dinamenta, UAB.
+(c) XB Software Ltd.
+
 */
+Scheduler.plugin(function(scheduler){
+
 scheduler.config.limit_start = null;
 scheduler.config.limit_end   = null;
 scheduler.config.limit_view  = false;
@@ -24,7 +28,7 @@ scheduler._temp_limit_scope = function(){
 		} else {
 			options.days = days;
 			options.zones = zones;
-		}	
+		}
 		return options;
 	};
 	var get_resulting_options = function(days, zones, sections) {
@@ -58,7 +62,7 @@ scheduler._temp_limit_scope = function(){
 		}
 
 		if (scheduler.config.limit_view){
-			nd = nd||od; nm = nm||om;		
+			nd = nd||od; nm = nm||om;
 			if (isBlocked(nd, nm) && !(od.valueOf() == nd.valueOf())){
 				setTimeout(function(){
 					var resetDate = !isBlocked(od, nm) ? od : scheduler.config.limit_start;
@@ -302,10 +306,12 @@ scheduler._temp_limit_scope = function(){
 	scheduler.attachEvent("onViewChange", function(){
 		scheduler._mark_now();
 	});
-	scheduler.attachEvent("onSchedulerResize", function(){
+
+	scheduler.attachEvent("onAfterSchedulerResize", function(){
 		window.setTimeout(function(){ scheduler._mark_now(); }, 1);
 		return true;
 	});
+
 	scheduler.attachEvent("onTemplatesReady", function() {
 		scheduler._mark_now_timer = window.setInterval(function() {
 			if(!scheduler._is_initialized())
@@ -343,6 +349,9 @@ scheduler._temp_limit_scope = function(){
 				var view = this._props[this._mode];
 				var units_l = view.size || view.options.length;
 				if (view.days > 1) {
+					if(view.size && view.options.length){
+						day_index = ((view.position+ day_index) / view.options.length) * view.size;
+					}
 					start_index = day_index;
 					end_index = day_index + units_l;
 				}
@@ -478,7 +487,7 @@ scheduler._temp_limit_scope = function(){
 						temp_configs.push(t_config);
 					}
 				}
-			}	
+			}
 		} else {
 			temp_configs.push(config);
 		}
@@ -498,8 +507,8 @@ scheduler._temp_limit_scope = function(){
 					delete t_config.start_date;
 					delete t_config.end_date;
 					t_config.days = t_sd.valueOf();
-					var zone_start = (start_date > t_sd) ? scheduler._get_zone_minutes(start_date) : min; 
-					var zone_end = ( end_date>t_ed || end_date.getDate() != t_sd.getDate() ) ? max : scheduler._get_zone_minutes(end_date);
+					var zone_start = (start_date > t_sd) ? scheduler._get_zone_minutes(start_date) : min;
+					var zone_end = ( end_date > t_ed || end_date.getDate() != t_sd.getDate() ) ? max : scheduler._get_zone_minutes(end_date);
 					t_config.zones = [zone_start, zone_end];
 					r_configs.push(t_config);
 
@@ -538,7 +547,7 @@ scheduler._temp_limit_scope = function(){
 		return css_classes.join(" ");
 	};
 	scheduler._get_block_by_config = function(config) {
-		var block  = document.createElement("DIV");
+		var block  = document.createElement("div");
 		if (config.html) {
 			if (typeof config.html == "string")
 				block.innerHTML = config.html;
@@ -607,16 +616,17 @@ scheduler._temp_limit_scope = function(){
 
 				if(this._ignores[sday]) continue;
 
+				var columnNumber = this.config.rtl ? this._colsS.col_length - 1  - sday : sday;
+
 				var block_proto = scheduler._get_block_by_config(options),
 					height = Math.max(area.offsetHeight - 1, 0), // 1 for bottom border
 					width = Math.max(area.offsetWidth - 1, 0), // 1 for left border
-					left = this._colsS[sday],
+					left = this._colsS[columnNumber],
 					top = this._colsS.heights[sweek]+(this._colsS.height?(this.xy.month_scale_height+2):2)-1;
-
 				block_proto.className = css_classes;
 				block_proto.style.top = top + "px";
 				block_proto.style.lineHeight = block_proto.style.height = height + "px";
-
+				
 				for (var k=0; k < zones.length; k+=2) {
 					var start = zones[i];
 					var end = zones[i+1];
@@ -677,7 +687,6 @@ scheduler._temp_limit_scope = function(){
 				blocks.push(block);
 			}
 		}
-
 		return blocks;
 	};
 
@@ -801,7 +810,6 @@ scheduler._temp_limit_scope = function(){
 			if(!scheduler._marked_timespans_types[type])
 				scheduler._marked_timespans_types[type] = true;
 
-
 			var day_configs = timespans[global][day][type];
 			config._array = day_configs;
 			day_configs.push(config);
@@ -814,12 +822,10 @@ scheduler._temp_limit_scope = function(){
 	// adds marked timespan to collections, persistent
 	scheduler.addMarkedTimespan = function(configuration) {
 		var configs = scheduler._prepare_timespan_options(configuration);
-
 		if (!configs.length)
 			return; // options are incorrect, nothing to mark
 
 		var id = configs[0].id;
-
 		for (var i=0; i<configs.length; i++) {
 			scheduler._addMarkerTimespanConfig(configs[i]);
 		}
@@ -870,7 +876,7 @@ scheduler._temp_limit_scope = function(){
 					var is_modified = false;
 					if (c_zone_start >= zone_start && c_zone_end <= zone_end) {
 						resulting_zones.splice(i, 2);
-					}				
+					}
 					if (c_zone_start < zone_start) {
 						resulting_zones.splice(i, 2, c_zone_start, zone_start);
 						is_modified = true;
@@ -1047,8 +1053,8 @@ scheduler._temp_limit_scope = function(){
 			}else{
 				var dx = 24*60*60*1000;
 				var day_ind = Math.round((day - scheduler._min_date)/dx);
-
-				day = scheduler.date.add(scheduler._min_date, Math.floor(day_ind/units.length), "day"); // to the "same" day for all sections
+				var unitsPerDay = view.size || units.length;
+				day = scheduler.date.add(scheduler._min_date, Math.floor(day_ind/unitsPerDay), "day"); // to the "same" day for all sections
 				day = scheduler.date.date_part(day);
 			}
 			day_index = day.getDay();
@@ -1084,3 +1090,6 @@ scheduler._temp_limit_scope = function(){
 
 };
 scheduler._temp_limit_scope();
+
+
+});

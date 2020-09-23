@@ -1,11 +1,15 @@
 /*
+
 @license
-dhtmlxScheduler v.4.4.9 Professional
+dhtmlxScheduler v.5.3.9 Standard
 
-This software is covered by DHTMLX Commercial License. Usage without proper license is prohibited.
+To use dhtmlxScheduler in non-GPL projects (and get Pro version of the product), please obtain Commercial/Enterprise or Ultimate license on our site https://dhtmlx.com/docs/products/dhtmlxScheduler/#licensing or contact us at sales@dhtmlx.com
 
-(c) Dinamenta, UAB.
+(c) XB Software Ltd.
+
 */
+Scheduler.plugin(function(scheduler){
+
 scheduler.form_blocks['combo']={
 	render:function(sns) {
 		if (!sns.cached_options)
@@ -44,7 +48,7 @@ scheduler.form_blocks['combo']={
 			node._combo.setOptionHeight(config.options_height);
 		var combo = node._combo;
 		combo.enableFilteringMode(config.filtering, config.script_path||null, !!config.cache);
-		
+
 		if (!config.script_path) { // script-side filtration is used
 			var all_options = [];
 			for (var i = 0; i < config.options.length; i++) {
@@ -70,9 +74,16 @@ scheduler.form_blocks['combo']={
 					combo.selectOption(0);
 					combo.disable(0);
 				} else {
-					dhtmlxAjax.get(config.script_path+"?id="+selected_id+"&uid="+scheduler.uid(), function(result){
-						var option = result.doXPath("//option")[0];
-						var label = option.childNodes[0].nodeValue;
+					scheduler.$ajax.get(config.script_path+"?id="+selected_id+"&uid="+scheduler.uid(), function(result){
+						var responseText = result.xmlDoc.responseText;
+						var label;
+						try{
+							var res = JSON.parse(responseText);
+							label = res.options[0].text;
+						}catch(e){
+							var option = scheduler.$ajax.xpath("//option", result.xmlDoc)[0];
+							label = option.childNodes[0].nodeValue;
+						}
 						config.cached_options[selected_id] = label;
 						combo.addOption(selected_id, label);
 						combo.disable(1);
@@ -99,7 +110,7 @@ scheduler.form_blocks['combo']={
 scheduler.form_blocks['radio']={
 	render:function(sns) {
 		var res = '';
-		res += "<div class='dhx_cal_ltext dhx_cal_radio' style='height:"+sns.height+"px;' >";
+		res += "<div class='dhx_cal_ltext dhx_cal_radio"+"' style='height:"+sns.height+"px;' >";
 		for (var i=0; i<sns.options.length; i++) {
 			var id = scheduler.uid();
 			res += "<input id='"+id+"' type='radio' name='"+sns.name+"' value='"+sns.options[i].key+"'><label for='"+id+"'>"+" "+sns.options[i].label+"</label>";
@@ -107,7 +118,7 @@ scheduler.form_blocks['radio']={
 				res += "<br/>";
 		}
 		res += "</div>";
-		
+
 		return res;
 	},
 	set_value:function(node,value,ev,config){
@@ -144,12 +155,12 @@ scheduler.form_blocks['checkbox']={
 		var id = scheduler.uid();
 		var isChecked = (typeof config.checked_value != "undefined") ? value == config.checked_value : !!value;
 		node.className += " dhx_cal_checkbox";
-		var check_html = "<input id='"+id+"' type='checkbox' value='true' name='"+config.name+"'"+((isChecked)?"checked='true'":'')+"'>"; 
+		var check_html = "<input id='"+id+"' type='checkbox' value='true' name='"+config.name+"'"+((isChecked)?"checked='true'":'')+"'>";
 		var label_html = "<label for='"+id+"'>"+(scheduler.locale.labels["section_"+config.name]||config.name)+"</label>";
 		if (scheduler.config.wide_form){
 			node.innerHTML = label_html;
 			node.nextSibling.innerHTML=check_html;
-		} else 
+		} else
 			node.innerHTML=check_html+label_html;
 
 		if (config.handler) {
@@ -167,3 +178,6 @@ scheduler.form_blocks['checkbox']={
 	focus:function(node){
 	}
 };
+
+
+});

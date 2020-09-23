@@ -1,13 +1,17 @@
 /*
+
 @license
-dhtmlxScheduler v.4.4.9 Professional
+dhtmlxScheduler v.5.3.9 Standard
 
-This software is covered by DHTMLX Commercial License. Usage without proper license is prohibited.
+To use dhtmlxScheduler in non-GPL projects (and get Pro version of the product), please obtain Commercial/Enterprise or Ultimate license on our site https://dhtmlx.com/docs/products/dhtmlxScheduler/#licensing or contact us at sales@dhtmlx.com
 
-(c) Dinamenta, UAB.
+(c) XB Software Ltd.
+
 */
+Scheduler.plugin(function(scheduler){
+
 (function() {
-	var dx, dy,	
+	var dx, dy,
 		html_regexp = new RegExp("<[^>]*>", "g"),
 		newline_regexp = new RegExp("<br[^>]*>", "g");
 
@@ -115,9 +119,9 @@ This software is covered by DHTMLX Commercial License. Usage without proper lice
 		} else if (scheduler._mode == "year") {
 			var xh = scheduler._els.dhx_cal_data[0].childNodes;
 			for (var i = 0; i < xh.length; i++) {
-				xml += "<month label='" + clean_html(xh[i].childNodes[0].innerHTML) + "'>";
-				xml += xml_month_scale(xh[i].childNodes[1].childNodes);
-				xml += xml_month(xh[i].childNodes[2]);
+				xml += "<month label='" + clean_html(xh[i].querySelector(".dhx_year_month").innerHTML) + "'>";
+				xml += xml_month_scale(xh[i].querySelector(".dhx_year_week").childNodes);
+				xml += xml_month(xh[i].querySelector(".dhx_year_body"));
 				xml += "</month>";
 			}
 		} else {
@@ -156,14 +160,16 @@ This software is covered by DHTMLX Commercial License. Usage without proper lice
 
 	function xml_month(yh) {
 		var xml = "";
-		var r = yh.firstChild.rows;
+		var r = yh.querySelectorAll("tr");
 		for (var i = 0; i < r.length; i++) {
 			var days = [];
-			for (var j = 0; j < r[i].cells.length; j++)
-				days.push(r[i].cells[j].firstChild.innerHTML);
+			var cells = r[i].querySelectorAll("td");
 
-			xml += "\n<row height='" + yh.firstChild.rows[i].cells[0].offsetHeight + "'><![CDATA[" + clean_html(days.join("|")) + "]]></row>";
-			dy = yh.firstChild.rows[0].cells[0].offsetHeight;
+			for (var j = 0; j < cells.length; j++)
+				days.push(cells[j].querySelector(".dhx_month_head").innerHTML);
+
+			xml += "\n<row height='" + cells[0].offsetHeight + "'><![CDATA[" + clean_html(days.join("|")) + "]]></row>";
+			dy = cells[0].offsetHeight;
 		}
 		return xml;
 	}
@@ -308,7 +314,7 @@ This software is covered by DHTMLX Commercial License. Usage without proper lice
 		return xml;
 	}
 
-	function to_pdf(start, end, view, url, mode, header, footer) {
+	function toXML(start, end, view, mode, header, footer){
 		var colors = false;
 		if (mode == "fullcolor") {
 			colors = true;
@@ -317,39 +323,71 @@ This software is covered by DHTMLX Commercial License. Usage without proper lice
 
 		mode = mode || "color";
 
-		var uid = scheduler.uid();
-		var d = document.createElement("div");
-		d.style.display = "none";
-		document.body.appendChild(d);
-
-		d.innerHTML = '<form id="' + uid + '" method="post" target="_blank" action="' + url + '" accept-charset="utf-8" enctype="application/x-www-form-urlencoded"><input type="hidden" name="mycoolxmlbody"/> </form>';
-
-
 		var xml = "";
 		if (start) {
+
 			var original_date = scheduler._date;
 			var original_mode = scheduler._mode;
 			end = scheduler.date[view+"_start"](end);
 			end = scheduler.date["get_"+view+"_end"] ? scheduler.date["get_"+view+"_end"](end) : scheduler.date.add(end, 1, view);
 
 			xml = xml_top("pages", mode, header, footer);
-			for (var temp_date = new Date(start); +temp_date < +end; temp_date = scheduler.date.add(temp_date, 1, view)) {
-				scheduler.setCurrentView(temp_date, view);
+			for (var temp_date = new Date(start); +temp_date < +end; temp_date = this.date.add(temp_date, 1, view)) {
+				this.setCurrentView(temp_date, view);
 				xml += xml_start("page") + xml_body_header().replace("\u2013", "-") + xml_body(colors) + xml_end("page");
 			}
 			xml += xml_end("pages");
 
-			scheduler.setCurrentView(original_date, original_mode);
+			this.setCurrentView(original_date, original_mode);
 		} else {
 			xml = xml_top("data", mode, header, footer) + xml_body_header().replace("\u2013", "-") + xml_body(colors) + xml_end("data");
 		}
+		return xml;
+	}
+	scheduler.getPDFData = toXML;
+	function send_xml(xml, url){
+		var uid = scheduler.uid();
+		var d = document.createElement("div");
+		d.style.display = "none";
+		document.body.appendChild(d);
 
-
+		d.innerHTML = '<form id="' + uid + '" method="post" target="_blank" action="' + url + '" accept-charset="utf-8" enctype="application/x-www-form-urlencoded"><input type="hidden" name="mycoolxmlbody"/> </form>';
 		document.getElementById(uid).firstChild.value = encodeURIComponent(xml);
 		document.getElementById(uid).submit();
 		d.parentNode.removeChild(d);
 	}
 
+	function to_pdf(start, end, view, url, mode, header, footer) {
+		var xml = "";
+		if(typeof mode == "object"){
+			xml = schedulersToPdf(mode);
+		}else{
+			xml = toXML.apply(this, [start, end, view, mode, header, footer]);
+		}
+
+		send_xml(xml, url);
+	}
+
+	function schedulersToPdf(objects){
+		var xml = "<data>";
+		for(var i=0; i < objects.length; i++){
+			xml += objects[i].source.getPDFData(objects[i].start, objects[i].end, objects[i].view, objects[i].mode, objects[i].header, objects[i].footer);
+		}
+		xml += "</data>";
+		return xml;
+	}
+
+	/*
+	 * scheduler.toPDF(url, mode, header, footer) - for a single scheduler
+	 * scheduler.toPDF(url, [scheduler1, scheduler2,...]) - for multiple schedulers
+	 * example:
+	 * scheduler.toPDF("generate.ashx", [
+	 *     { source: scheduler1, mode: "color" },
+	 *     { source: scheduler2, mode: "gray", view:"week", start:new Date(2013, 06, 1), end:new Date(2013, 06, 28) },
+	 *     { source: scheduler3 }
+	 * ]);
+	 *
+	 */
 	scheduler.toPDF = function(url, mode, header, footer) {
 		return to_pdf.apply(this, [null, null, null, url, mode, header, footer]);
 	};
@@ -362,3 +400,6 @@ This software is covered by DHTMLX Commercial License. Usage without proper lice
 		return to_pdf.apply(this, arguments);
 	};
 })();
+
+
+});

@@ -1,11 +1,15 @@
 /*
+
 @license
-dhtmlxScheduler v.4.4.9 Professional
+dhtmlxScheduler v.5.3.9 Standard
 
-This software is covered by DHTMLX Commercial License. Usage without proper license is prohibited.
+To use dhtmlxScheduler in non-GPL projects (and get Pro version of the product), please obtain Commercial/Enterprise or Ultimate license on our site https://dhtmlx.com/docs/products/dhtmlxScheduler/#licensing or contact us at sales@dhtmlx.com
 
-(c) Dinamenta, UAB.
+(c) XB Software Ltd.
+
 */
+Scheduler.plugin(function(scheduler){
+
 scheduler.expand = function() {
 	if(!scheduler.callEvent("onBeforeExpand", []))
 		return;
@@ -47,7 +51,7 @@ scheduler.collapse = function() {
 	scheduler.callEvent("onCollapse", []);
 };
 scheduler.attachEvent("onTemplatesReady", function() {
-	var t = document.createElement("DIV");
+	var t = document.createElement("div");
 	t.className = "dhx_expand_icon";
 	scheduler.toggleIcon = t;
 	scheduler._obj.appendChild(t);
@@ -76,8 +80,8 @@ scheduler._maximize = function() {
 		}
 	}
 
-	if (scheduler.callEvent("onSchedulerResize", [])) {
-		scheduler.update_view();
-		scheduler.callEvent("onAfterSchedulerResize");
-	}
+	scheduler.setCurrentView();
 };
+
+
+});

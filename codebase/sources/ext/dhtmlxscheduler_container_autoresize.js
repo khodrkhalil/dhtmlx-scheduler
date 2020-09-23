@@ -1,12 +1,14 @@
 /*
+
 @license
-dhtmlxScheduler v.4.4.9 Professional
+dhtmlxScheduler v.5.3.9 Standard
 
-This software is covered by DHTMLX Commercial License. Usage without proper license is prohibited.
+To use dhtmlxScheduler in non-GPL projects (and get Pro version of the product), please obtain Commercial/Enterprise or Ultimate license on our site https://dhtmlx.com/docs/products/dhtmlxScheduler/#licensing or contact us at sales@dhtmlx.com
 
-(c) Dinamenta, UAB.
+(c) XB Software Ltd.
+
 */
-(function() {
+Scheduler.plugin(function(scheduler){
 
 	scheduler.config.container_autoresize = true;
 	scheduler.config.month_day_min_height = 90;
@@ -111,8 +113,8 @@ This software is covered by DHTMLX Commercial License. Usage without proper lice
 					height = parseInt(checked_div.style.height, 10);
 					break;
 				case "dhx_multi_day":
-                    height = (checked_div) ? checked_div.offsetHeight - 1 : 0;
-                    multiday_height = height;
+					height = (checked_div) ? checked_div.offsetHeight - 1 : 0;
+					multiday_height = height;
 					break;
 				case "dhx_cal_data":
 					var mode = scheduler.getState().mode;
@@ -214,22 +216,28 @@ This software is covered by DHTMLX Commercial License. Usage without proper lice
 
 					if (scheduler.matrix && scheduler.matrix[mode]) {
 						if (is_repaint) {
-							height += 2;
+							height += 0;
 							checked_div.style.height = height + "px";
 						} else {
-							height = 2;
+							height = 0;
 							var cfg = scheduler.matrix[mode];
 							var rows = cfg.y_unit;
 							for(var r=0; r < rows.length; r++){
-								height += !rows[r].children ? cfg.dy : (cfg.folder_dy||cfg.dy);
+								height += cfg._section_height[rows[r].key];
+							}
+							// Check and add extra height to avoid events hiding by the horizontal scrollbar
+							if(scheduler.$container.clientWidth != scheduler.$container.scrollWidth){
+								height += getScrollSize();
 							}
 						}
+						height -= 1;
 					}
 					if (mode == "day" || mode == "week" || (scheduler._props && scheduler._props[mode])) {
 						height += 2;
 					}
 					break;
 			}
+			height += 1;
 			total_height += height;
 		}
 		scheduler._obj.style.height = (total_height) + "px";
@@ -238,19 +246,63 @@ This software is covered by DHTMLX Commercial License. Usage without proper lice
 			scheduler.updateView();
 	};
 
+	function callUpdate(){
+		active = false;
+		scheduler.callEvent("onAfterSchedulerResize", []);
+		active = true;
+	}
+
 	var conditionalUpdateContainerHeight = function() {
 		if(!(scheduler.config.container_autoresize && active))
 			return true;
 
 		var mode = scheduler.getState().mode;
 
-		updateContainterHeight();
+		if(!mode) {
+			return true;
+		}
+
+		var asyncRepaint = window.requestAnimationFrame || window.setTimeout;
+		var scrollTop = document.documentElement.scrollTop;
+
+		asyncRepaint(function() {
+			updateContainterHeight();
+		});
+
 		if ( (scheduler.matrix && scheduler.matrix[mode]) || mode == "month") {
-			window.setTimeout(function() {
+			asyncRepaint(function() {
 				updateContainterHeight(true);
+				document.documentElement.scrollTop = scrollTop;
+				callUpdate();
 			}, 1);
+		}else{
+			callUpdate();
 		}
 	};
+
+	scheduler.attachEvent("onBeforeViewChange", function(){
+		var autosizeEnabled = scheduler.config.container_autoresize;
+		if(!scheduler.xy.$original_scroll_width){
+			scheduler.xy.$original_scroll_width = scheduler.xy.scroll_width;
+		}
+
+		scheduler.xy.scroll_width = autosizeEnabled ? 0 : scheduler.xy.$original_scroll_width;
+
+		if(scheduler.matrix){
+			for(var i in scheduler.matrix){
+				var timeline = scheduler.matrix[i];
+				if(!timeline.$original_section_autoheight){
+					timeline.$original_section_autoheight = timeline.section_autoheight;
+				}
+				if(autosizeEnabled){
+					timeline.section_autoheight = false;
+				}else{
+					timeline.section_autoheight = timeline.$original_section_autoheight;
+				}
+			}
+		}
+		return true;
+	});
 
 	scheduler.attachEvent("onViewChange", conditionalUpdateContainerHeight);
 	scheduler.attachEvent("onXLE", conditionalUpdateContainerHeight);
@@ -271,4 +323,16 @@ This software is covered by DHTMLX Commercial License. Usage without proper lice
 		active = true;
 		return true;
 	});
-})();
+	// helper function
+	function getScrollSize() {
+		var div = document.createElement("div");
+		div.style.cssText = "visibility:hidden;position:absolute;left:-1000px;width:100px;padding:0px;margin:0px;height:110px;min-height:100px;overflow-y:scroll;";
+
+		document.body.appendChild(div);
+		var size = div.offsetWidth - div.clientWidth;
+		document.body.removeChild(div);
+		return size;
+	}
+
+
+});

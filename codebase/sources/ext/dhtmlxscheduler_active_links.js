@@ -1,11 +1,15 @@
 /*
+
 @license
-dhtmlxScheduler v.4.4.9 Professional
+dhtmlxScheduler v.5.3.9 Standard
 
-This software is covered by DHTMLX Commercial License. Usage without proper license is prohibited.
+To use dhtmlxScheduler in non-GPL projects (and get Pro version of the product), please obtain Commercial/Enterprise or Ultimate license on our site https://dhtmlx.com/docs/products/dhtmlxScheduler/#licensing or contact us at sales@dhtmlx.com
 
-(c) Dinamenta, UAB.
+(c) XB Software Ltd.
+
 */
+Scheduler.plugin(function(scheduler){
+
 scheduler.config.active_link_view = "day";
 scheduler._active_link_click = function(e){
 	var start = e.target || event.srcElement;
@@ -40,5 +44,7 @@ scheduler.attachEvent("onTemplatesReady", function() {
 	}
 
 	this._detachDomEvent(this._obj, "click", scheduler._active_link_click);
-	dhtmlxEvent(this._obj, "click", scheduler._active_link_click);
+	scheduler.event(this._obj, "click", scheduler._active_link_click);
+});
+
 });

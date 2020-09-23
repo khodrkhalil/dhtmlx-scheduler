@@ -1,17 +1,21 @@
 /*
+
 @license
-dhtmlxScheduler v.4.4.9 Professional
+dhtmlxScheduler v.5.3.9 Standard
 
-This software is covered by DHTMLX Commercial License. Usage without proper license is prohibited.
+To use dhtmlxScheduler in non-GPL projects (and get Pro version of the product), please obtain Commercial/Enterprise or Ultimate license on our site https://dhtmlx.com/docs/products/dhtmlxScheduler/#licensing or contact us at sales@dhtmlx.com
 
-(c) Dinamenta, UAB.
+(c) XB Software Ltd.
+
 */
+Scheduler.plugin(function(scheduler){
+
 scheduler.date.add_agenda = function(date){
 	return scheduler.date.add(date, 1, "year");
 };
 
 scheduler.templates.agenda_time = function(start,end,ev){
-	if (ev._timed) 
+	if (ev._timed)
 		return this.day_date(ev.start_date, ev.end_date, ev)+" "+this.event_date(start);
 	else
 		return scheduler.templates.day_date(start)+" &ndash; "+scheduler.templates.day_date(end);
@@ -34,15 +38,8 @@ scheduler.attachEvent("onTemplatesReady",function() {
 				return old_dblclick_dhx_cal_data.apply(this, arguments);
 		}
 	};
-	scheduler.attachEvent("onSchedulerResize",function(){
-	if (this._mode == "agenda"){
-		this.agenda_view(true);
-		return false;
-	}
-		return true;
-	});
-	
-	
+
+
 	var old = scheduler.render_data;
 	scheduler.render_data=function(evs){
 		if (this._mode == "agenda")
@@ -50,7 +47,7 @@ scheduler.attachEvent("onTemplatesReady",function() {
 		else
 			return old.apply(this,arguments);
 	};
-	
+
 	var old_render_view_data = scheduler.render_view_data;
 	scheduler.render_view_data = function(){
 		if(this._mode == "agenda") {
@@ -71,7 +68,7 @@ scheduler.attachEvent("onTemplatesReady",function() {
 
 			scheduler._els["dhx_cal_header"][0].innerHTML="<div "+rowAttr+" class='dhx_agenda_line'>" +
 				"<div "+dateHeader+">"+l.date+"</div>" +
-				"<span style='padding-left:25px' "+descriptionHeader+">"+l.description+"</span>" +
+				"<span class = 'description_header' style='padding-left:25px' "+descriptionHeader+">"+l.description+"</span>" +
 				"</div>";
 			scheduler._table_view=true;
 			scheduler.set_sizes();
@@ -82,7 +79,7 @@ scheduler.attachEvent("onTemplatesReady",function() {
 		//get current date
 		var date = scheduler._date;
 		//select events for which data need to be printed
-		
+
 		var events = scheduler.get_visible_events();
 		events.sort(function(a,b){ return a.start_date>b.start_date?1:-1;});
 
@@ -99,12 +96,16 @@ scheduler.attachEvent("onTemplatesReady",function() {
 			agendaEventAttrString = scheduler._waiAria.agendaEventAttrString(ev);
 			var agendaDetailsButtonAttr = scheduler._waiAria.agendaDetailsBtnString();
 
-			html+="<div "+agendaEventAttrString+" class='dhx_agenda_line"+(ev_class?' '+ev_class:'')+"' event_id='"+ev.id+"' style='"+color+""+bg_color+""+(ev._text_style||"")+"'><div class='dhx_agenda_event_time'>"+scheduler.templates.agenda_time(ev.start_date, ev.end_date,ev)+"</div>";
-			html+="<div "+agendaDetailsButtonAttr+" class='dhx_event_icon icon_details'>&nbsp</div>";
+			html+="<div "+agendaEventAttrString+" class='dhx_agenda_line"+(ev_class?' '+ev_class:'')+
+					"' event_id='"+ev.id+"' style='"+color+""+bg_color+""+
+					(ev._text_style||"")+"'><div class='dhx_agenda_event_time'>"+
+					(scheduler.config.rtl ? scheduler.templates.agenda_time(ev.end_date,ev.start_date, ev):scheduler.templates.agenda_time(ev.start_date, ev.end_date,ev))+
+					"</div>";
+			html+="<div "+agendaDetailsButtonAttr+" class='dhx_event_icon icon_details'>&nbsp;</div>";
 			html+="<span>"+scheduler.templates.agenda_text(ev.start_date, ev.end_date, ev)+"</span></div>";
 		}
 		html+="<div class='dhx_v_border'></div></div>";
-			
+
 		//render html
 		scheduler._els["dhx_cal_data"][0].innerHTML = html;
 		scheduler._els["dhx_cal_data"][0].childNodes[0].scrollTop = scheduler._agendaScrollTop||0;
@@ -113,14 +114,18 @@ scheduler.attachEvent("onTemplatesReady",function() {
 		var agenda_area = scheduler._els["dhx_cal_data"][0].childNodes[0];
 		var v_border = agenda_area.childNodes[agenda_area.childNodes.length-1];
 		v_border.style.height = (agenda_area.offsetHeight < scheduler._els["dhx_cal_data"][0].offsetHeight) ? "100%" : (agenda_area.offsetHeight+"px");
-		
+
 		var t=scheduler._els["dhx_cal_data"][0].firstChild.childNodes;
-		scheduler._els["dhx_cal_date"][0].innerHTML=scheduler.templates.agenda_date(scheduler._min_date, scheduler._max_date, scheduler._mode);
-		
+
+		var dateElement = scheduler._getNavDateElement();
+		if(dateElement){
+			dateElement.innerHTML=scheduler.templates.agenda_date(scheduler._min_date, scheduler._max_date, scheduler._mode);
+		}
+
 		scheduler._rendered=[];
 		for (var i=0; i < t.length-1; i++)
 			scheduler._rendered[i]=t[i];
-		
+
 	}
 
 	scheduler.agenda_view=function(mode){
@@ -139,4 +144,7 @@ scheduler.attachEvent("onTemplatesReady",function() {
 			//agenda tab de-activated
 		}
 	};
+});
+
+
 });

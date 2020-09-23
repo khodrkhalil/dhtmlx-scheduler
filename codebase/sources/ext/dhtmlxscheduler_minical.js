@@ -1,11 +1,15 @@
 /*
+
 @license
-dhtmlxScheduler v.4.4.9 Professional
+dhtmlxScheduler v.5.3.9 Standard
 
-This software is covered by DHTMLX Commercial License. Usage without proper license is prohibited.
+To use dhtmlxScheduler in non-GPL projects (and get Pro version of the product), please obtain Commercial/Enterprise or Ultimate license on our site https://dhtmlx.com/docs/products/dhtmlxScheduler/#licensing or contact us at sales@dhtmlx.com
 
-(c) Dinamenta, UAB.
+(c) XB Software Ltd.
+
 */
+Scheduler.plugin(function(scheduler){
+
 scheduler.templates.calendar_month = scheduler.date.date_to_str("%F %Y");
 scheduler.templates.calendar_scale_date = scheduler.date.date_to_str("%D");
 scheduler.templates.calendar_date = scheduler.date.date_to_str("%d");
@@ -29,7 +33,7 @@ scheduler.renderCalendar = function(obj, _prev, is_refresh) {
 		if (typeof pos == "string")
 			pos = document.getElementById(pos);
 		if (pos && (typeof pos.left == "undefined")) {
-			var tpos = getOffset(pos);
+			var tpos = scheduler.$domHelpers.getOffset(pos);
 			pos = {
 				top: tpos.top + pos.offsetHeight,
 				left: tpos.left
@@ -43,15 +47,18 @@ scheduler.renderCalendar = function(obj, _prev, is_refresh) {
 			e = e || event;
 			var src = e.target || e.srcElement;
 
-			if (src.className.indexOf("dhx_month_head") != -1) {
-				var pname = src.parentNode.className;
-				if (pname.indexOf("dhx_after") == -1 && pname.indexOf("dhx_before") == -1) {
-					var newdate = scheduler.templates.xml_date(this.getAttribute("date"));
-					newdate.setDate(parseInt(src.innerHTML, 10));
+			var $dom = scheduler.$domHelpers;
+			if ($dom.closest(src, ".dhx_month_head")) {
+				if (!$dom.closest(src, ".dhx_after") && !$dom.closest(src, ".dhx_before")) {
+
+					var cellRoot = $dom.closest(src, "[data-cell-date]");
+					var dateAttribute = cellRoot.getAttribute("data-cell-date");
+					var newDate = scheduler.templates.parse_date(dateAttribute);
+				
 					scheduler.unmarkCalendar(this);
-					scheduler.markCalendar(this, newdate, "dhx_calendar_click");
-					this._last_date = newdate;
-					if (this.conf.handler) this.conf.handler.call(scheduler, newdate, this);
+					scheduler.markCalendar(this, newDate, "dhx_calendar_click");
+					this._last_date = newDate;
+					if (this.conf.handler) this.conf.handler.call(scheduler, newDate, this);
 				}
 			}
 		};
@@ -106,7 +113,7 @@ scheduler.renderCalendar = function(obj, _prev, is_refresh) {
 };
 scheduler._get_def_cont = function(pos) {
 	if (!this._def_count) {
-		this._def_count = document.createElement("DIV");
+		this._def_count = document.createElement("div");
 		this._def_count.className = "dhx_minical_popup";
 		this._def_count.onclick = function(e) { (e || event).cancelBubble = true; };
 		document.body.appendChild(this._def_count);
@@ -174,7 +181,7 @@ scheduler.updateCalendar = function(obj, sd) {
 	obj.conf.date = sd;
 	this.renderCalendar(obj.conf, obj, true);
 };
-scheduler._mini_cal_arrows = ["&nbsp", "&nbsp"];
+scheduler._mini_cal_arrows = ["&nbsp;", "&nbsp;"];
 scheduler._render_calendar = function(obj, sd, conf, previous) {
 	/*store*/
 	var ts = scheduler.templates;
@@ -198,16 +205,16 @@ scheduler._render_calendar = function(obj, sd, conf, previous) {
 	if (previous){
 		d = previous;
 	} else {
-		d = document.createElement("DIV");
+		d = document.createElement("div");
 		d.className = "dhx_cal_container dhx_mini_calendar";
 	}
-	d.setAttribute("date", this.templates.xml_format(sd));
+	d.setAttribute("date", this._helpers.formatDate(sd));
 	d.innerHTML = "<div class='dhx_year_month'></div>" +
-		"<div class='dhx_year_grid'>" +
+			"<div class='dhx_year_grid" +
+			(scheduler.config.rtl ? " dhx_grid_rtl'>" : "'>") +
 			"<div class='dhx_year_week'>"+(week_template ? week_template.innerHTML : "")+"</div>" +
 			"<div class='dhx_year_body'></div>" +
 		"</div>";
-
 	var header = d.querySelector(".dhx_year_month");
 	var weekHeader = d.querySelector(".dhx_year_week");
 	var body = d.querySelector(".dhx_year_body");
@@ -226,20 +233,23 @@ scheduler._render_calendar = function(obj, sd, conf, previous) {
 		var css_texts = ["left:1px;top:2px;position:absolute;", "left:auto; right:1px;top:2px;position:absolute;"];
 		var diffs = [-1, 1];
 		var handler = function(diff) {
-			return function() {
+			return function() {	
 				if (conf.sync) {
 					var calendars = scheduler._synced_minicalendars;
 					for (var k = 0; k < calendars.length; k++) {
 						move_minicalendar_date(calendars[k], diff);
 					}
 				} else {
+					if (scheduler.config.rtl) {
+						diff = -diff;
+					}
 					move_minicalendar_date(d, diff);
 				}
 			};
 		};
 		var labels = [scheduler.locale.labels.prev, scheduler.locale.labels.next];
 		for (var j = 0; j < 2; j++) {
-			var arrow = document.createElement("DIV");
+			var arrow = document.createElement("div");
 			//var diff = diffs[j];
 			arrow.className = css_classnames[j];
 
@@ -318,7 +328,7 @@ scheduler.isCalendarVisible = function() {
 };
 
 scheduler._attach_minical_events = function(){
-	dhtmlxEvent(document.body, "click", function() { scheduler.destroyCalendar(); });
+	scheduler.event(document.body, "click", function() { scheduler.destroyCalendar(); });
 	scheduler._attach_minical_events = function(){};
 };
 
@@ -343,7 +353,7 @@ scheduler.form_blocks.calendar_time = {
 		dt.setHours(first / 60);
 
 		sns._time_values = [];
-		html += " <select>";
+		html += " <select class='dhx_lightbox_time_select'>";
 		for (var i = first; i < last; i += this.config.time_step * 1) { // `<` to exclude last "00:00" option
 			var time = this.templates.time_picker(dt);
 			html += "<option value='" + i + "'>" + time + "</option>";
@@ -354,7 +364,7 @@ scheduler.form_blocks.calendar_time = {
 
 		var full_day = scheduler.config.full_day;
 
-		return "<div style='height:30px;padding-top:0; font-size:inherit;' class='dhx_section_time'>" + html + "<span style='font-weight:normal; font-size:10pt;'> &nbsp;&ndash;&nbsp; </span>" + html + "</div>";
+		return "<div style='height:30px;padding-top:0; font-size:inherit;' class='dhx_section_time dhx_lightbox_minical'>" + html + "<span style='font-weight:normal; font-size:10pt;'> &nbsp;&ndash;&nbsp; </span>" + html + "</div>";
 	},
 	set_value: function(node, value, ev, config) {
 
@@ -505,30 +515,41 @@ scheduler.linkCalendar = function(calendar, datediff) {
 	scheduler.attachEvent("onXLE", action);
 	scheduler.attachEvent("onEventAdded", action);
 	scheduler.attachEvent("onEventChanged", action);
-	scheduler.attachEvent("onAfterEventDelete", action);
+	scheduler.attachEvent("onEventDeleted", action);
 	action();
 };
 
 scheduler._markCalendarCurrentDate = function(calendar) {
-	var date = scheduler._date;
-	var mode = scheduler._mode;
+	var state = scheduler.getState();
+	var from = state.min_date;
+	var to = state.max_date;
+	var mode = state.mode;
+
 	var month_start = scheduler.date.month_start(new Date(calendar._date));
 	var month_end = scheduler.date.add(month_start, 1, "month");
 
-	if (mode == 'day' || (this._props && !!this._props[mode])) { // if day or units view
-		if (month_start.valueOf() <= date.valueOf() && month_end > date) {
-			scheduler.markCalendar(calendar, date, "dhx_calendar_click");
+	var noHighlight = {
+		"month":true,
+		"year":true,
+		"agenda":true,
+		"grid":true
+	};
+	// no need to highlight current dates for a large range views - agenda, year, etc.
+	if(noHighlight[mode] || (from.valueOf() <= month_start.valueOf() && to.valueOf() >= month_end.valueOf())){
+		return;
+	}
+
+	var current = from;
+	while(current.valueOf() < to.valueOf()){
+		if (month_start.valueOf() <= current.valueOf() && month_end > current) {
+			scheduler.markCalendar(calendar, current, "dhx_calendar_click");
 		}
-	} else if (mode == 'week') {
-		var dateNew = scheduler.date.week_start(new Date(date.valueOf()));
-		for (var i = 0; i < 7; i++) {
-			if (month_start.valueOf() <= dateNew.valueOf() && month_end > dateNew) // >= would mean mark first day of the next month
-				scheduler.markCalendar(calendar, dateNew, "dhx_calendar_click");
-			dateNew = scheduler.date.add(dateNew, 1, "day");
-		}
+		current = scheduler.date.add(current, 1, "day");
 	}
 };
 
 scheduler.attachEvent("onEventCancel", function(){
 	scheduler.destroyCalendar(null, true);
+});
+
 });
