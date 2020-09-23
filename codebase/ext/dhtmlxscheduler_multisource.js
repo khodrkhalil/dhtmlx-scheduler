@@ -1,12 +1,9 @@
 /*
-
 @license
-dhtmlxScheduler v.5.3.9 Standard
+dhtmlxScheduler v.5.0.0 Professional Evaluation
 
-To use dhtmlxScheduler in non-GPL projects (and get Pro version of the product), please obtain Commercial/Enterprise or Ultimate license on our site https://dhtmlx.com/docs/products/dhtmlxScheduler/#licensing or contact us at sales@dhtmlx.com
+This software is covered by DHTMLX Evaluation License. Contact sales@dhtmlx.com to get Commercial or Enterprise license. Usage without proper license is prohibited.
 
-(c) XB Software Ltd.
-
+(c) Dinamenta, UAB.
 */
-Scheduler.plugin(function(e){!function(){function t(e){var t=function(){};return t.prototype=e,t}var a=e._load;e._load=function(e,n){if("object"==typeof(e=e||this._load_url))for(var i=t(this._loaded),r=0;r<e.length;r++)this._loaded=new i,a.call(this,e[r],n);else a.apply(this,arguments)}}()});
-//# sourceMappingURL=../sources/ext/dhtmlxscheduler_multisource.js.map
+Scheduler.plugin(function(e){!function(){function t(e){var t=function(){};return t.prototype=e,t}var a=e._load;e._load=function(e,i){if(e=e||this._load_url,"object"==typeof e)for(var n=t(this._loaded),r=0;r<e.length;r++)this._loaded=new n,a.call(this,e[r],i);else a.apply(this,arguments)}}()});

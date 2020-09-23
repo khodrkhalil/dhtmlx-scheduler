@@ -1,16 +1,12 @@
 /*
-
 @license
-dhtmlxScheduler v.5.3.9 Standard
+dhtmlxScheduler v.5.0.0 Professional Evaluation
 
-To use dhtmlxScheduler in non-GPL projects (and get Pro version of the product), please obtain Commercial/Enterprise or Ultimate license on our site https://dhtmlx.com/docs/products/dhtmlxScheduler/#licensing or contact us at sales@dhtmlx.com
+This software is covered by DHTMLX Evaluation License. Contact sales@dhtmlx.com to get Commercial or Enterprise license. Usage without proper license is prohibited.
 
-(c) XB Software Ltd.
-
+(c) Dinamenta, UAB.
 */
-Scheduler.plugin(function(e){e._get_serializable_data=function(){var e={};for(var t in this._events){var a=this._events[t];-1==a.id.toString().indexOf("#")&&(e[a.id]=a)}return e},e.data_attributes=function(){var t=[],a=e._helpers.formatDate,n=this._get_serializable_data();for(var i in n){var r=n[i];for(var o in r)"_"!=o.substr(0,1)&&t.push([o,"start_date"==o||"end_date"==o?a:null]);break}return t},e.toXML=function(e){var t=[],a=this.data_attributes(),n=this._get_serializable_data()
-;for(var i in n){var r=n[i];t.push("<event>");for(var o=0;o<a.length;o++)t.push("<"+a[o][0]+"><![CDATA["+(a[o][1]?a[o][1](r[a[o][0]]):r[a[o][0]])+"]]></"+a[o][0]+">");t.push("</event>")}return(e||"")+"<data>"+t.join("\n")+"</data>"},e._serialize_json_value=function(e){return null===e||"boolean"==typeof e?e=""+e:(e||0===e||(e=""),e='"'+e.toString().replace(/\n/g,"").replace(/\\/g,"\\\\").replace(/\"/g,'\\"')+'"'),e},e.toJSON=function(){
-var e=[],t="",a=this.data_attributes(),n=this._get_serializable_data();for(var i in n){for(var r=n[i],o=[],_=0;_<a.length;_++)t=a[_][1]?a[_][1](r[a[_][0]]):r[a[_][0]],o.push(' "'+a[_][0]+'": '+this._serialize_json_value(t));e.push("{"+o.join(",")+"}")}return"["+e.join(",\n")+"]"},e.toICal=function(t){
-var a="BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//dhtmlXScheduler//NONSGML v2.2//EN\nDESCRIPTION:",n="END:VCALENDAR",i=e.date.date_to_str("%Y%m%dT%H%i%s"),r=e.date.date_to_str("%Y%m%d"),o=[],_=this._get_serializable_data();for(var d in _){var s=_[d];o.push("BEGIN:VEVENT"),s._timed&&(s.start_date.getHours()||s.start_date.getMinutes())?o.push("DTSTART:"+i(s.start_date)):o.push("DTSTART:"+r(s.start_date)),
-s._timed&&(s.end_date.getHours()||s.end_date.getMinutes())?o.push("DTEND:"+i(s.end_date)):o.push("DTEND:"+r(s.end_date)),o.push("SUMMARY:"+s.text),o.push("END:VEVENT")}return a+(t||"")+"\n"+o.join("\n")+"\n"+n}});
-//# sourceMappingURL=../sources/ext/dhtmlxscheduler_serialize.js.map
+Scheduler.plugin(function(e){e._get_serializable_data=function(){var e={};for(var t in this._events){var a=this._events[t];-1==a.id.toString().indexOf("#")&&(e[a.id]=a)}return e},e.data_attributes=function(){var t=[],a=e.templates.xml_format,n=this._get_serializable_data();for(var i in n){var r=n[i];for(var s in r)"_"!=s.substr(0,1)&&t.push([s,"start_date"==s||"end_date"==s?a:null]);break}return t},e.toXML=function(e){var t=[],a=this.data_attributes(),n=this._get_serializable_data();for(var i in n){
+var r=n[i];t.push("<event>");for(var s=0;s<a.length;s++)t.push("<"+a[s][0]+"><![CDATA["+(a[s][1]?a[s][1](r[a[s][0]]):r[a[s][0]])+"]]></"+a[s][0]+">");t.push("</event>")}return(e||"")+"<data>"+t.join("\n")+"</data>"},e._serialize_json_value=function(e){return null===e||"boolean"==typeof e?e=""+e:(e||0===e||(e=""),e='"'+e.toString().replace(/\n/g,"").replace(/\\/g,"\\\\").replace(/\"/g,'\\"')+'"'),e},e.toJSON=function(){var e=[],t="",a=this.data_attributes(),n=this._get_serializable_data();for(var i in n){
+for(var r=n[i],s=[],o=0;o<a.length;o++)t=a[o][1]?a[o][1](r[a[o][0]]):r[a[o][0]],s.push(' "'+a[o][0]+'": '+this._serialize_json_value(t));e.push("{"+s.join(",")+"}")}return"["+e.join(",\n")+"]"},e.toICal=function(t){var a="BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//dhtmlXScheduler//NONSGML v2.2//EN\nDESCRIPTION:",n="END:VCALENDAR",i=e.date.date_to_str("%Y%m%dT%H%i%s"),r=e.date.date_to_str("%Y%m%d"),s=[],o=this._get_serializable_data();for(var d in o){var l=o[d];s.push("BEGIN:VEVENT"),l._timed&&(l.start_date.getHours()||l.start_date.getMinutes())?s.push("DTSTART:"+i(l.start_date)):s.push("DTSTART:"+r(l.start_date)),
+l._timed&&(l.end_date.getHours()||l.end_date.getMinutes())?s.push("DTEND:"+i(l.end_date)):s.push("DTEND:"+r(l.end_date)),s.push("SUMMARY:"+l.text),s.push("END:VEVENT")}return a+(t||"")+"\n"+s.join("\n")+"\n"+n}});
